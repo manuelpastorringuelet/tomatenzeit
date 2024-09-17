@@ -18,34 +18,29 @@ type TimerProps = {
 };
 
 const Timer = ({ imageUrl }: TimerProps) => {
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const savedTimeLeft = localStorage.getItem("timeLeft");
-    return savedTimeLeft ? parseInt(savedTimeLeft, 10) : WORK_TIME;
-  });
-  const [isActive, setIsActive] = useState(() => {
-    return localStorage.getItem("isActive") === "true";
-  });
-  const [mode, setMode] = useState<"work" | "short_break" | "long_break">(
-    () => {
-      return (
-        (localStorage.getItem("mode") as
-          | "work"
-          | "short_break"
-          | "long_break") || "work"
-      );
-    }
-  );
-  const [, setCycles] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(WORK_TIME);
+  const [isActive, setIsActive] = useState(false);
+  const [mode, setMode] = useState<"work" | "short_break" | "long_break">("work");
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const [activity, setActivity] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [lastChanceActive, setLastChanceActive] = useState(false);
-  const [completedPomodoros, setCompletedPomodoros] = useState(() => {
-    const savedPomodoros = localStorage.getItem("completedPomodoros");
-    return savedPomodoros ? parseInt(savedPomodoros, 10) : 0;
-  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Load saved state from localStorage
+    const savedTimeLeft = localStorage.getItem("timeLeft");
+    const savedIsActive = localStorage.getItem("isActive");
+    const savedMode = localStorage.getItem("mode") as "work" | "short_break" | "long_break";
+    const savedCompletedPomodoros = localStorage.getItem("completedPomodoros");
+
+    if (savedTimeLeft) setTimeLeft(parseInt(savedTimeLeft, 10));
+    if (savedIsActive) setIsActive(savedIsActive === "true");
+    if (savedMode) setMode(savedMode);
+    if (savedCompletedPomodoros) setCompletedPomodoros(parseInt(savedCompletedPomodoros, 10));
+  }, []);
 
   useEffect(() => {
     audioRef.current = new Audio("/notification.mp3");
@@ -259,7 +254,6 @@ const Timer = ({ imageUrl }: TimerProps) => {
     setIsActive(false);
     setMode("work");
     setTimeLeft(WORK_TIME);
-    setCycles(0);
     setActivity("");
     setShowDialog(false);
     setShowCompletionDialog(false);
@@ -272,6 +266,7 @@ const Timer = ({ imageUrl }: TimerProps) => {
   };
 
   useEffect(() => {
+    // Save state to localStorage
     localStorage.setItem("timeLeft", timeLeft.toString());
     localStorage.setItem("isActive", isActive.toString());
     localStorage.setItem("mode", mode);
