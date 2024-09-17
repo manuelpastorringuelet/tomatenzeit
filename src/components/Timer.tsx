@@ -9,7 +9,7 @@ import {
   WORK_TIME,
 } from "@/constants/timerConstants";
 import { formatTime, getRandomActivity } from "@/utils/timerUtils";
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import TimerControls from "./TimerControls";
 import TimerDisplay from "./TimerDisplay";
 
@@ -19,22 +19,29 @@ type TimerProps = {
 
 const Timer = ({ imageUrl }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(() => {
-    const savedTimeLeft = localStorage.getItem('timeLeft');
+    const savedTimeLeft = localStorage.getItem("timeLeft");
     return savedTimeLeft ? parseInt(savedTimeLeft, 10) : WORK_TIME;
   });
   const [isActive, setIsActive] = useState(() => {
-    return localStorage.getItem('isActive') === 'true';
+    return localStorage.getItem("isActive") === "true";
   });
-  const [mode, setMode] = useState<"work" | "short_break" | "long_break">(() => {
-    return (localStorage.getItem('mode') as "work" | "short_break" | "long_break") || "work";
-  });
+  const [mode, setMode] = useState<"work" | "short_break" | "long_break">(
+    () => {
+      return (
+        (localStorage.getItem("mode") as
+          | "work"
+          | "short_break"
+          | "long_break") || "work"
+      );
+    }
+  );
   const [, setCycles] = useState(0);
   const [activity, setActivity] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [lastChanceActive, setLastChanceActive] = useState(false);
   const [completedPomodoros, setCompletedPomodoros] = useState(() => {
-    const savedPomodoros = localStorage.getItem('completedPomodoros');
+    const savedPomodoros = localStorage.getItem("completedPomodoros");
     return savedPomodoros ? parseInt(savedPomodoros, 10) : 0;
   });
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -52,13 +59,17 @@ const Timer = ({ imageUrl }: TimerProps) => {
   }, []);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
         .then((registration) => {
-          console.log('Service Worker registered with scope:', registration.scope);
+          console.log(
+            "Service Worker registered with scope:",
+            registration.scope
+          );
         })
         .catch((error) => {
-          console.error('Service Worker registration failed:', error);
+          console.error("Service Worker registration failed:", error);
         });
     }
   }, []);
@@ -81,38 +92,6 @@ const Timer = ({ imageUrl }: TimerProps) => {
     startWork();
   }, [startWork]);
 
-  const sendNotification = (title: string, body: string) => {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'PLAY_NOTIFICATION',
-        title: title,
-        body: body
-      });
-    } else {
-      // Fallback for when service worker is not available
-      if ("Notification" in window) {
-        if (Notification.permission === "granted") {
-          new Notification(title, {
-            body: body,
-            icon: "/icon-192x192.png",
-          });
-        } else if (Notification.permission !== "denied") {
-          Notification.requestPermission().then((permission) => {
-            if (permission === "granted") {
-              new Notification(title, {
-                body: body,
-                icon: "/icon-192x192.png",
-              });
-            }
-          });
-        }
-      } else {
-        // Fallback for browsers that don't support notifications
-        alert(`${title}: ${body}`);
-      }
-    }
-  };
-
   const handleTimerComplete = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.loop = true;
@@ -127,7 +106,9 @@ const Timer = ({ imageUrl }: TimerProps) => {
 
       sendNotification(
         "TomZeit: Time to recharge!",
-        `You've completed ${newCompletedPomodoros} pomodoro${newCompletedPomodoros > 1 ? 's' : ''}. Take a break!`
+        `You've completed ${newCompletedPomodoros} pomodoro${
+          newCompletedPomodoros > 1 ? "s" : ""
+        }. Take a break!`
       );
 
       if (newCompletedPomodoros % POMODOROS_BEFORE_LONG_BREAK === 0) {
@@ -155,6 +136,64 @@ const Timer = ({ imageUrl }: TimerProps) => {
     }
   }, [mode, completedPomodoros, lastChanceActive, completeLastChance]);
 
+  useEffect(() => {
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "INIT_TIMER",
+        timeLeft,
+        isActive,
+        mode,
+      });
+
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data && event.data.type === "TIMER_UPDATE") {
+          setTimeLeft(event.data.timeLeft);
+          if (event.data.timeLeft === 0) {
+            handleTimerComplete();
+          }
+        }
+      };
+
+      navigator.serviceWorker.addEventListener("message", messageHandler);
+
+      return () => {
+        navigator.serviceWorker.removeEventListener("message", messageHandler);
+      };
+    }
+  }, [timeLeft, isActive, mode, handleTimerComplete]);
+
+  const sendNotification = (title: string, body: string) => {
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "PLAY_NOTIFICATION",
+        title: title,
+        body: body,
+      });
+    } else {
+      // Fallback for when service worker is not available
+      if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+          new Notification(title, {
+            body: body,
+            icon: "/icon-192x192.png",
+          });
+        } else if (Notification.permission !== "denied") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              new Notification(title, {
+                body: body,
+                icon: "/icon-192x192.png",
+              });
+            }
+          });
+        }
+      } else {
+        // Fallback for browsers that don't support notifications
+        alert(`${title}: ${body}`);
+      }
+    }
+  };
+
   const startLastChance = () => {
     if (audioRef.current) {
       audioRef.current.loop = false;
@@ -165,6 +204,34 @@ const Timer = ({ imageUrl }: TimerProps) => {
     setTimeLeft(LAST_CHANCE_TIME);
     setIsActive(true);
     setShowCompletionDialog(false);
+  };
+
+  const startTimer = useCallback(() => {
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "START_TIMER",
+        duration: timeLeft,
+        mode,
+      });
+    }
+    setIsActive(true);
+  }, [timeLeft, mode]);
+
+  const stopTimer = useCallback(() => {
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "STOP_TIMER",
+      });
+    }
+    setIsActive(false);
+  }, []);
+
+  const toggleTimer = () => {
+    if (isActive) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
   };
 
   useEffect(() => {
@@ -183,20 +250,6 @@ const Timer = ({ imageUrl }: TimerProps) => {
     };
   }, [isActive, timeLeft, handleTimerComplete]);
 
-  const toggleTimer = () => {
-    setIsActive(!isActive);
-  };
-
-  const startBreak = () => {
-    if (audioRef.current) {
-      audioRef.current.loop = false;
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setShowDialog(false);
-    setIsActive(true);
-  };
-
   const resetTimer = () => {
     if (audioRef.current) {
       audioRef.current.loop = false;
@@ -212,18 +265,32 @@ const Timer = ({ imageUrl }: TimerProps) => {
     setShowCompletionDialog(false);
     setLastChanceActive(false);
     setCompletedPomodoros(0);
-    localStorage.removeItem('timeLeft');
-    localStorage.removeItem('isActive');
-    localStorage.removeItem('mode');
-    localStorage.removeItem('completedPomodoros');
+    localStorage.removeItem("timeLeft");
+    localStorage.removeItem("isActive");
+    localStorage.removeItem("mode");
+    localStorage.removeItem("completedPomodoros");
   };
 
   useEffect(() => {
-    localStorage.setItem('timeLeft', timeLeft.toString());
-    localStorage.setItem('isActive', isActive.toString());
-    localStorage.setItem('mode', mode);
-    localStorage.setItem('completedPomodoros', completedPomodoros.toString());
+    localStorage.setItem("timeLeft", timeLeft.toString());
+    localStorage.setItem("isActive", isActive.toString());
+    localStorage.setItem("mode", mode);
+    localStorage.setItem("completedPomodoros", completedPomodoros.toString());
+
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "UPDATE_TIMER_STATE",
+        timeLeft,
+        isActive,
+        mode,
+      });
+    }
   }, [timeLeft, isActive, mode, completedPomodoros]);
+
+  const startBreak = useCallback(() => {
+    setShowDialog(false);
+    setIsActive(true);
+  }, []);
 
   return (
     <div className="text-center bg-black p-6 rounded-lg border-4 border-white shadow-lg font-mono relative max-h-[95dvh] w-[90vw] max-w-xl overflow-auto">

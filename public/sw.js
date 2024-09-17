@@ -18,13 +18,8 @@ const urlsToCache = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open('tomzeit-v1').then((cache) => {
-      return cache.addAll([
-        '/',
-        '/index.html',
-        '/notification.mp3',
-        '/icon-192x192.png'
-      ]);
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache);
     })
   );
 });
@@ -38,17 +33,68 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'PLAY_NOTIFICATION') {
+  if (event.data && event.data.type === 'INIT_TIMER') {
+    currentMode = event.data.mode;
+    if (event.data.isActive) {
+      startTimer(event.data.timeLeft);
+    }
+  } else if (event.data && event.data.type === 'START_TIMER') {
+    currentMode = event.data.mode;
+    startTimer(event.data.duration);
+  } else if (event.data && event.data.type === 'STOP_TIMER') {
+    stopTimer();
+  } else if (event.data && event.data.type === 'UPDATE_TIMER_STATE') {
+    currentMode = event.data.mode;
+    if (event.data.isActive) {
+      startTimer(event.data.timeLeft);
+    } else {
+      stopTimer();
+    }
+  } else if (event.data && event.data.type === 'PLAY_NOTIFICATION') {
     self.registration.showNotification(event.data.title, {
       body: event.data.body,
       icon: '/icon-192x192.png',
       vibrate: [200, 100, 200]
     });
-
-    const audio = new Audio('/notification.mp3');
-    audio.play().catch(error => console.error('Error playing audio:', error));
   }
 });
+
+function startTimer(duration) {
+  stopTimer();
+  timerEndTime = Date.now() + (duration * 1000);
+  timerInterval = setInterval(updateTimer, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+}
+
+function updateTimer() {
+  const now = Date.now();
+  const timeLeft = Math.max(0, Math.floor((timerEndTime - now) / 1000));
+
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'TIMER_UPDATE',
+        timeLeft: timeLeft
+      });
+    });
+  });
+
+  if (timeLeft === 0) {
+    stopTimer();
+    const title = currentMode === 'work' ? 'Time to take a break!' : 'Time to focus!';
+    const body = currentMode === 'work' ? 'Great job! Time for a well-deserved break.' : 'Break\'s over. Let\'s get back to work!';
+    self.registration.showNotification(title, {
+      body: body,
+      icon: '/icon-192x192.png',
+      vibrate: [200, 100, 200]
+    });
+  }
+}
 
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
