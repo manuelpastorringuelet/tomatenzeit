@@ -40,6 +40,13 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
       audioRef.current.play().catch((error) => console.error("Error playing audio:", error));
     }
 
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("Pomodoro Timer", {
+        body: mode === "work" ? "Time for a break!" : "Time to work!",
+        icon: "/icon-192x192.png"
+      });
+    }
+
     if (mode === "work") {
       const newCycles = cycles + 1;
       setCycles(newCycles);
