@@ -44,6 +44,25 @@ const Timer = ({ imageUrl }: TimerProps) => {
     audioRef.current = new Audio("/notification.mp3");
   }, []);
 
+  useEffect(() => {
+    // Request notification permission when the component mounts
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch((error) => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
+  }, []);
+
   const startWork = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.loop = false;
@@ -62,6 +81,38 @@ const Timer = ({ imageUrl }: TimerProps) => {
     startWork();
   }, [startWork]);
 
+  const sendNotification = (title: string, body: string) => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'PLAY_NOTIFICATION',
+        title: title,
+        body: body
+      });
+    } else {
+      // Fallback for when service worker is not available
+      if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+          new Notification(title, {
+            body: body,
+            icon: "/icon-192x192.png",
+          });
+        } else if (Notification.permission !== "denied") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              new Notification(title, {
+                body: body,
+                icon: "/icon-192x192.png",
+              });
+            }
+          });
+        }
+      } else {
+        // Fallback for browsers that don't support notifications
+        alert(`${title}: ${body}`);
+      }
+    }
+  };
+
   const handleTimerComplete = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.loop = true;
@@ -70,16 +121,14 @@ const Timer = ({ imageUrl }: TimerProps) => {
         .catch((error) => console.error("Error playing audio:", error));
     }
 
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("TomZeit", {
-        body: mode === "work" ? "Time to recharge!" : "Time to focus!",
-        icon: "/icon-192x192.png",
-      });
-    }
-
     if (mode === "work") {
       const newCompletedPomodoros = completedPomodoros + 1;
       setCompletedPomodoros(newCompletedPomodoros);
+
+      sendNotification(
+        "TomZeit: Time to recharge!",
+        `You've completed ${newCompletedPomodoros} pomodoro${newCompletedPomodoros > 1 ? 's' : ''}. Take a break!`
+      );
 
       if (newCompletedPomodoros % POMODOROS_BEFORE_LONG_BREAK === 0) {
         setMode("long_break");
@@ -92,6 +141,11 @@ const Timer = ({ imageUrl }: TimerProps) => {
       setShowDialog(true);
       setIsActive(false);
     } else {
+      sendNotification(
+        "TomZeit: Break's over!",
+        "Time to focus and start your next pomodoro."
+      );
+
       if (lastChanceActive) {
         completeLastChance();
       } else {

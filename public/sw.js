@@ -18,16 +18,36 @@ const urlsToCache = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+    caches.open('tomzeit-v1').then((cache) => {
+      return cache.addAll([
+        '/',
+        '/index.html',
+        '/notification.mp3',
+        '/icon-192x192.png'
+      ]);
+    })
   );
 });
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'PLAY_NOTIFICATION') {
+    self.registration.showNotification(event.data.title, {
+      body: event.data.body,
+      icon: '/icon-192x192.png',
+      vibrate: [200, 100, 200]
+    });
+
+    const audio = new Audio('/notification.mp3');
+    audio.play().catch(error => console.error('Error playing audio:', error));
+  }
 });
 
 self.addEventListener('activate', (event) => {
