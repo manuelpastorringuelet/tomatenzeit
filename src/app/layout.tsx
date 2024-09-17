@@ -10,8 +10,8 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "TomatenZeit",
-  description: "Ein Pomodoro-Timer mit Wellness-Funktionen",
+  title: "TomZeit",
+  description: "A simple Pomodoro timer with wellness features",
   manifest: "/manifest.json",
 };
 

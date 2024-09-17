@@ -1,6 +1,6 @@
 {
-  "name": "TomatenZeit",
-  "short_name": "TomatenZeit",
+  "name": "TomZeit",
+  "short_name": "TomZeit",
   "description": "A fun Pomodoro timer with quick wellness activities",
   "start_url": "/",
   "display": "standalone",
