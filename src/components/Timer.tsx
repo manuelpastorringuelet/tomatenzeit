@@ -3,19 +3,27 @@
 import Image from "next/image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-const WORK_TIME = 15; // 5 seconds for testing
-const SHORT_BREAK = 10; // 5 seconds for testing
-const LONG_BREAK = 5; // 5 seconds for testing
+const WORK_TIME = 25 * 60; // 25 minutes
+const SHORT_BREAK = 5 * 60; // 5 minutes
+const LONG_BREAK = 15 * 60; // 15 minutes
+const POMODOROS_BEFORE_LONG_BREAK = 3;
 
 const wellnessActivities = [
-  "🧘 Quick stretch! Touch your toes 🦶",
-  "👁️ 20-20-20 rule: Look 20ft away for 20s",
-  "💧 Hydrate! Drink some water 🚰",
-  "😊 Smile at yourself in the mirror",
-  "🌬️ Take 3 deep breaths",
-  "🙌 Give yourself a quick hand massage",
-  "🕺 Do a silly dance for 5 seconds",
-  "🌿 Look at a plant or out the window",
+  "🌞 Get some sunlight exposure for 2-10 minutes",
+  "🧘 Practice 1 minute of box breathing (4s inhale, 4s hold, 4s exhale, 4s hold)",
+  "👁️ Focus on a distant object for 30-60 seconds to reduce eye strain",
+  "💧 Hydrate with 8-16 oz of water",
+  "🏃 Do 1 minute of jumping jacks or high knees for a cortisol spike",
+  "🙌 Perform 20 seconds of self-massage on your neck and shoulders",
+  "🌬️ Take 5 physiological sighs (double inhale through nose, long exhale through mouth)",
+  "🧊 Splash cold water on your face for 15-30 seconds to increase alertness",
+  "🌿 Look at nature or greenery for 40 seconds to reduce stress",
+  "🦵 Do 10 air squats to increase blood flow and energy",
+  "👂 Listen to binaural beats at 40Hz for 1 minute to enhance focus",
+  "✊ Practice progressive muscle relaxation for 1 minute",
+  "🧠 Do 30 seconds of alternate nostril breathing for cognitive balance",
+  "👐 Stretch your wrists and fingers to prevent repetitive strain",
+  "🌈 Focus on a specific color in your environment for 30 seconds to reset attention",
 ];
 
 const LAST_CHANCE_TIME = 60; // 1 minute
@@ -27,7 +35,9 @@ interface TimerProps {
 const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
 };
 
 const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
@@ -36,12 +46,13 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
   const [mode, setMode] = useState<"work" | "short_break" | "long_break">(
     "work"
   );
-  const [cycles, setCycles] = useState(0);
+  const [, setCycles] = useState(0);
   const [activity, setActivity] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [, setTaskCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [lastChanceActive, setLastChanceActive] = useState(false);
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -83,9 +94,10 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     }
 
     if (mode === "work") {
-      const newCycles = cycles + 1;
-      setCycles(newCycles);
-      if (newCycles % 4 === 0) {
+      const newCompletedPomodoros = completedPomodoros + 1;
+      setCompletedPomodoros(newCompletedPomodoros);
+
+      if (newCompletedPomodoros % POMODOROS_BEFORE_LONG_BREAK === 0) {
         setMode("long_break");
         setTimeLeft(LONG_BREAK);
       } else {
@@ -107,7 +119,7 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
         setIsActive(false);
       }
     }
-  }, [mode, cycles, lastChanceActive, completeLastChance]);
+  }, [mode, completedPomodoros, lastChanceActive, completeLastChance]);
 
   const startLastChance = () => {
     if (audioRef.current) {
@@ -167,6 +179,7 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     setShowCompletionDialog(false);
     setLastChanceActive(false);
     setTaskCompleted(false);
+    setCompletedPomodoros(0);
   };
 
   return (
@@ -184,6 +197,9 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
         </h2>
         <div className="text-7xl font-bold text-black bg-green-100 p-4 rounded">
           {formatTime(timeLeft)}
+        </div>
+        <div className="mt-4 text-xl font-bold text-black">
+          Pomodoros: {completedPomodoros}
         </div>
       </div>
       <div className="flex justify-center space-x-4 mb-4">
@@ -207,7 +223,9 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
       {showDialog && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-blue-900 border-4 border-white p-4 rounded-lg max-w-sm w-full">
-            <p className="text-white text-lg mb-2">Wellness Challenge:</p>
+            <p className="text-white text-lg mb-2">
+              Science-Based Wellness Challenge:
+            </p>
             <p className="text-yellow-300 text-xl mb-4">{activity}</p>
             <button
               onClick={startBreak}
