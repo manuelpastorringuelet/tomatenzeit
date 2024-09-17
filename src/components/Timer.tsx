@@ -24,6 +24,12 @@ interface TimerProps {
   imageUrl: string;
 }
 
+const formatTime = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
 const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
   const [timeLeft, setTimeLeft] = useState(WORK_TIME);
   const [isActive, setIsActive] = useState(false);
@@ -43,6 +49,24 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     audioRef.current = new Audio("/notification.mp3");
   }, []);
 
+  const startWork = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.loop = false;
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setMode("work");
+    setTimeLeft(WORK_TIME);
+    setActivity("");
+    setShowCompletionDialog(false);
+    setIsActive(true);
+  }, []);
+
+  const completeLastChance = useCallback(() => {
+    setLastChanceActive(false);
+    startWork();
+  }, [startWork]);
+
   const handleTimerComplete = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.loop = true;
@@ -52,8 +76,8 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     }
 
     if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("Pomodoro Timer", {
-        body: mode === "work" ? "Time for a break!" : "Time to work!",
+      new Notification("TomZeit", {
+        body: mode === "work" ? "Time to recharge!" : "Time to focus!",
         icon: "/icon-192x192.png",
       });
     }
@@ -83,7 +107,7 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
         setIsActive(false);
       }
     }
-  }, [cycles, mode, lastChanceActive]);
+  }, [mode, cycles, lastChanceActive, completeLastChance]);
 
   const startLastChance = () => {
     if (audioRef.current) {
@@ -95,11 +119,6 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     setTimeLeft(LAST_CHANCE_TIME);
     setIsActive(true);
     setShowCompletionDialog(false);
-  };
-
-  const completeLastChance = () => {
-    setLastChanceActive(false);
-    startWork();
   };
 
   useEffect(() => {
@@ -133,28 +152,6 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     setTaskCompleted(false);
   };
 
-  const startWork = () => {
-    if (audioRef.current) {
-      audioRef.current.loop = false;
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-    setMode("work");
-    setTimeLeft(WORK_TIME);
-    setActivity("");
-    setShowCompletionDialog(false);
-    setIsActive(true);
-  };
-
-  const formatTime = (time: number): string => {
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
-    return `${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  // Add this new function to reset the timer
   const resetTimer = () => {
     if (audioRef.current) {
       audioRef.current.loop = false;
@@ -173,19 +170,19 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
   };
 
   return (
-    <div className="text-center bg-black p-4 rounded-lg border-4 border-white shadow-lg font-mono relative">
-      <div className="bg-green-300 p-4 rounded mb-4">
+    <div className="text-center bg-black p-6 rounded-lg border-4 border-white shadow-lg font-mono relative max-h-[95dvh] w-[90vw] max-w-xl overflow-auto">
+      <div className="bg-green-300 p-6 rounded mb-6">
         <Image
           src={imageUrl}
           alt="Pomodoro Wellness"
-          width={150}
-          height={150}
-          className="mx-auto mb-4 rounded pixelated"
+          width={200}
+          height={200}
+          className="mx-auto mb-6 rounded pixelated"
         />
-        <h2 className="text-2xl font-bold mb-2 text-black uppercase">
-          {mode === "work" ? "Work Time" : "Break Time"}
+        <h2 className="text-3xl font-bold mb-4 text-black uppercase">
+          {mode === "work" ? "Focus Time" : "Recharge Time"}
         </h2>
-        <div className="text-6xl font-bold text-black bg-green-100 p-2 rounded">
+        <div className="text-7xl font-bold text-black bg-green-100 p-4 rounded">
           {formatTime(timeLeft)}
         </div>
       </div>
@@ -210,13 +207,13 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
       {showDialog && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-blue-900 border-4 border-white p-4 rounded-lg max-w-sm w-full">
-            <p className="text-white text-lg mb-2">Wellness Quest:</p>
+            <p className="text-white text-lg mb-2">Wellness Challenge:</p>
             <p className="text-yellow-300 text-xl mb-4">{activity}</p>
             <button
               onClick={startBreak}
               className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
             >
-              <span className="mr-2">I COMMIT TO THIS QUEST</span>
+              <span className="mr-2">I COMMIT TO THIS CHALLENGE</span>
               <span className="w-4 h-4 border-2 border-black flex items-center justify-center">
                 ✓
               </span>

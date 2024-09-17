@@ -1,7 +1,7 @@
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,7 +27,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
       </head>
-      <body className={`${geistSans.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} antialiased min-h-[100dvh] flex flex-col`}
+      >
         <ServiceWorkerRegistration />
         {children}
       </body>
