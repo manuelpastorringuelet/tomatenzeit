@@ -1,46 +1,23 @@
 "use client";
 
-import Image from "next/image";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  LAST_CHANCE_TIME,
+  LONG_BREAK,
+  POMODOROS_BEFORE_LONG_BREAK,
+  SHORT_BREAK,
+  wellnessActivities,
+  WORK_TIME,
+} from "@/constants/timerConstants";
+import { formatTime, getRandomActivity } from "@/utils/timerUtils";
+import { useCallback, useEffect, useRef, useState } from "react";
+import TimerControls from "./TimerControls";
+import TimerDisplay from "./TimerDisplay";
 
-const WORK_TIME = 25 * 60; // 25 minutes
-const SHORT_BREAK = 5 * 60; // 5 minutes
-const LONG_BREAK = 15 * 60; // 15 minutes
-const POMODOROS_BEFORE_LONG_BREAK = 3;
-
-const wellnessActivities = [
-  "🌞 Get some sunlight exposure for 2-10 minutes",
-  "🧘 Practice 1 minute of box breathing (4s inhale, 4s hold, 4s exhale, 4s hold)",
-  "👁️ Focus on a distant object for 30-60 seconds to reduce eye strain",
-  "💧 Hydrate with 8-16 oz of water",
-  "🏃 Do 1 minute of jumping jacks or high knees for a cortisol spike",
-  "🙌 Perform 20 seconds of self-massage on your neck and shoulders",
-  "🌬️ Take 5 physiological sighs (double inhale through nose, long exhale through mouth)",
-  "🧊 Splash cold water on your face for 15-30 seconds to increase alertness",
-  "🌿 Look at nature or greenery for 40 seconds to reduce stress",
-  "🦵 Do 10 air squats to increase blood flow and energy",
-  "👂 Listen to binaural beats at 40Hz for 1 minute to enhance focus",
-  "✊ Practice progressive muscle relaxation for 1 minute",
-  "🧠 Do 30 seconds of alternate nostril breathing for cognitive balance",
-  "👐 Stretch your wrists and fingers to prevent repetitive strain",
-  "🌈 Focus on a specific color in your environment for 30 seconds to reset attention",
-];
-
-const LAST_CHANCE_TIME = 60; // 1 minute
-
-interface TimerProps {
+type TimerProps = {
   imageUrl: string;
-}
-
-const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-    .toString()
-    .padStart(2, "0")}`;
 };
 
-const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
+const Timer = ({ imageUrl }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(WORK_TIME);
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<"work" | "short_break" | "long_break">(
@@ -49,7 +26,6 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
   const [, setCycles] = useState(0);
   const [activity, setActivity] = useState("");
   const [showDialog, setShowDialog] = useState(false);
-  const [, setTaskCompleted] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [lastChanceActive, setLastChanceActive] = useState(false);
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
@@ -104,11 +80,7 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
         setMode("short_break");
         setTimeLeft(SHORT_BREAK);
       }
-      setActivity(
-        wellnessActivities[
-          Math.floor(Math.random() * wellnessActivities.length)
-        ]
-      );
+      setActivity(getRandomActivity(wellnessActivities));
       setShowDialog(true);
       setIsActive(false);
     } else {
@@ -161,7 +133,6 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     }
     setShowDialog(false);
     setIsActive(true);
-    setTaskCompleted(false);
   };
 
   const resetTimer = () => {
@@ -178,48 +149,22 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
     setShowDialog(false);
     setShowCompletionDialog(false);
     setLastChanceActive(false);
-    setTaskCompleted(false);
     setCompletedPomodoros(0);
   };
 
   return (
     <div className="text-center bg-black p-6 rounded-lg border-4 border-white shadow-lg font-mono relative max-h-[95dvh] w-[90vw] max-w-xl overflow-auto">
-      <div className="bg-green-300 p-6 rounded mb-6">
-        <Image
-          src={imageUrl}
-          alt="Pomodoro Wellness"
-          width={200}
-          height={200}
-          className="mx-auto mb-6 rounded pixelated"
-        />
-        <h2 className="text-3xl font-bold mb-4 text-black uppercase">
-          {mode === "work" ? "Focus Time" : "Recharge Time"}
-        </h2>
-        <div className="text-7xl font-bold text-black bg-green-100 p-4 rounded">
-          {formatTime(timeLeft)}
-        </div>
-        <div className="mt-4 text-xl font-bold text-black">
-          Pomodoros: {completedPomodoros}
-        </div>
-      </div>
-      <div className="flex justify-center space-x-4 mb-4">
-        <button
-          onClick={toggleTimer}
-          className={`${
-            isActive
-              ? "bg-yellow-500 hover:bg-yellow-600 border-yellow-700"
-              : "bg-green-500 hover:bg-green-600 border-green-700"
-          } text-white font-bold py-2 px-4 rounded border-b-4 active:border-b-2 active:translate-y-0.5 transition-all`}
-        >
-          {isActive ? "PAUSE" : "START"}
-        </button>
-        <button
-          onClick={resetTimer}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded border-b-4 border-blue-700 active:border-b-2 active:translate-y-0.5 transition-all"
-        >
-          RESET
-        </button>
-      </div>
+      <TimerDisplay
+        imageUrl={imageUrl}
+        mode={mode}
+        timeLeft={timeLeft}
+        completedPomodoros={completedPomodoros}
+      />
+      <TimerControls
+        isActive={isActive}
+        toggleTimer={toggleTimer}
+        resetTimer={resetTimer}
+      />
       {showDialog && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-blue-900 border-4 border-white p-4 rounded-lg max-w-sm w-full">
@@ -243,25 +188,25 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-blue-900 border-4 border-white p-4 rounded-lg max-w-sm w-full">
             <p className="text-white text-lg mb-2">
-              Did you complete the task?
+              Did you complete the challenge?
             </p>
             <p className="text-yellow-300 text-xl mb-4">{activity}</p>
             <div className="flex flex-col space-y-2">
               <button
                 onClick={startWork}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
               >
                 <span className="mr-2">YES, START WORK</span>
-                <span className="w-4 h-4 border-2 border-black flex items-center justify-center">
+                <span className="w-4 h-4 border-2 border-white flex items-center justify-center">
                   ✓
                 </span>
               </button>
               <button
                 onClick={startLastChance}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
+                className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
               >
                 <span className="mr-2">I&apos;LL DO IT RIGHT NOW</span>
-                <span className="w-4 h-4 border-2 border-white flex items-center justify-center">
+                <span className="w-4 h-4 border-2 border-black flex items-center justify-center">
                   ⏱️
                 </span>
               </button>
@@ -273,7 +218,7 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-blue-900 border-4 border-white p-4 rounded-lg max-w-sm w-full">
             <p className="text-white text-lg mb-2">
-              Time to complete the task:
+              Time to complete the challenge:
             </p>
             <p className="text-yellow-300 text-xl mb-4">{activity}</p>
             <div className="text-6xl font-bold text-white mb-4">
@@ -283,7 +228,7 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
               onClick={completeLastChance}
               className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
             >
-              <span className="mr-2">TASK COMPLETED</span>
+              <span className="mr-2">CHALLENGE COMPLETED</span>
               <span className="w-4 h-4 border-2 border-white flex items-center justify-center">
                 ✓
               </span>
