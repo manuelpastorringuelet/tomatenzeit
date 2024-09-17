@@ -154,6 +154,24 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
       .padStart(2, "0")}`;
   };
 
+  // Add this new function to reset the timer
+  const resetTimer = () => {
+    if (audioRef.current) {
+      audioRef.current.loop = false;
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsActive(false);
+    setMode("work");
+    setTimeLeft(WORK_TIME);
+    setCycles(0);
+    setActivity("");
+    setShowDialog(false);
+    setShowCompletionDialog(false);
+    setLastChanceActive(false);
+    setTaskCompleted(false);
+  };
+
   return (
     <div className="text-center bg-black p-4 rounded-lg border-4 border-white shadow-lg font-mono relative">
       <div className="bg-green-300 p-4 rounded mb-4">
@@ -171,12 +189,24 @@ const Timer: React.FC<TimerProps> = ({ imageUrl }) => {
           {formatTime(timeLeft)}
         </div>
       </div>
-      <button
-        onClick={toggleTimer}
-        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mb-4 border-b-4 border-red-700 active:border-b-2 active:translate-y-0.5 transition-all"
-      >
-        {isActive ? "PAUSE" : "START"}
-      </button>
+      <div className="flex justify-center space-x-4 mb-4">
+        <button
+          onClick={toggleTimer}
+          className={`${
+            isActive
+              ? "bg-yellow-500 hover:bg-yellow-600 border-yellow-700"
+              : "bg-green-500 hover:bg-green-600 border-green-700"
+          } text-white font-bold py-2 px-4 rounded border-b-4 active:border-b-2 active:translate-y-0.5 transition-all`}
+        >
+          {isActive ? "PAUSE" : "START"}
+        </button>
+        <button
+          onClick={resetTimer}
+          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded border-b-4 border-blue-700 active:border-b-2 active:translate-y-0.5 transition-all"
+        >
+          RESET
+        </button>
+      </div>
       {showDialog && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-blue-900 border-4 border-white p-4 rounded-lg max-w-sm w-full">

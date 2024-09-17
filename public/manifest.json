@@ -1,6 +1,6 @@
 {
-  "name": "Pomodoro Wellness",
-  "short_name": "PomodoroWW",
+  "name": "TomatenZeit",
+  "short_name": "TomatenZeit",
   "description": "A fun Pomodoro timer with quick wellness activities",
   "start_url": "/",
   "display": "standalone",
