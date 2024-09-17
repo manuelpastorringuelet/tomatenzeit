@@ -9,7 +9,7 @@ import {
   WORK_TIME,
 } from "@/constants/timerConstants";
 import { formatTime, getRandomActivity } from "@/utils/timerUtils";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import TimerControls from "./TimerControls";
 import TimerDisplay from "./TimerDisplay";
 
@@ -18,17 +18,25 @@ type TimerProps = {
 };
 
 const Timer = ({ imageUrl }: TimerProps) => {
-  const [timeLeft, setTimeLeft] = useState(WORK_TIME);
-  const [isActive, setIsActive] = useState(false);
-  const [mode, setMode] = useState<"work" | "short_break" | "long_break">(
-    "work"
-  );
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const savedTimeLeft = localStorage.getItem('timeLeft');
+    return savedTimeLeft ? parseInt(savedTimeLeft, 10) : WORK_TIME;
+  });
+  const [isActive, setIsActive] = useState(() => {
+    return localStorage.getItem('isActive') === 'true';
+  });
+  const [mode, setMode] = useState<"work" | "short_break" | "long_break">(() => {
+    return (localStorage.getItem('mode') as "work" | "short_break" | "long_break") || "work";
+  });
   const [, setCycles] = useState(0);
   const [activity, setActivity] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [lastChanceActive, setLastChanceActive] = useState(false);
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
+  const [completedPomodoros, setCompletedPomodoros] = useState(() => {
+    const savedPomodoros = localStorage.getItem('completedPomodoros');
+    return savedPomodoros ? parseInt(savedPomodoros, 10) : 0;
+  });
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -150,7 +158,18 @@ const Timer = ({ imageUrl }: TimerProps) => {
     setShowCompletionDialog(false);
     setLastChanceActive(false);
     setCompletedPomodoros(0);
+    localStorage.removeItem('timeLeft');
+    localStorage.removeItem('isActive');
+    localStorage.removeItem('mode');
+    localStorage.removeItem('completedPomodoros');
   };
+
+  useEffect(() => {
+    localStorage.setItem('timeLeft', timeLeft.toString());
+    localStorage.setItem('isActive', isActive.toString());
+    localStorage.setItem('mode', mode);
+    localStorage.setItem('completedPomodoros', completedPomodoros.toString());
+  }, [timeLeft, isActive, mode, completedPomodoros]);
 
   return (
     <div className="text-center bg-black p-6 rounded-lg border-4 border-white shadow-lg font-mono relative max-h-[95dvh] w-[90vw] max-w-xl overflow-auto">
