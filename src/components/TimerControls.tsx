@@ -18,13 +18,13 @@ const TimerControls = ({
           : "bg-green-500 hover:bg-green-600 border-green-700"
       } text-white font-bold py-2 px-4 rounded border-b-4 active:border-b-2 active:translate-y-0.5 transition-all`}
     >
-      {isActive ? "PAUSE" : "START"}
+      {isActive ? "PAUSE (SPACE)" : "START (SPACE)"}
     </button>
     <button
       onClick={resetTimer}
       className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded border-b-4 border-blue-700 active:border-b-2 active:translate-y-0.5 transition-all"
     >
-      RESET
+      RESET (R)
     </button>
   </div>
 );

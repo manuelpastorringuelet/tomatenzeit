@@ -20,7 +20,7 @@ const LastChanceDialog = ({ activity, timeLeft, completeLastChance }: LastChance
         onClick={completeLastChance}
         className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
       >
-        <span className="mr-2">CHALLENGE COMPLETED</span>
+        <span className="mr-2">CHALLENGE COMPLETED (Y)</span>
         <span className="w-4 h-4 border-2 border-white flex items-center justify-center">
           ✓
         </span>

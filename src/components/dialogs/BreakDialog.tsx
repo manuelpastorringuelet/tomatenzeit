@@ -14,7 +14,7 @@ const BreakDialog = ({ activity, startBreak }: BreakDialogProps) => (
         onClick={startBreak}
         className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
       >
-        <span className="mr-2">I COMMIT TO THIS CHALLENGE</span>
+        <span className="mr-2">I COMMIT TO THIS CHALLENGE (Y)</span>
         <span className="w-4 h-4 border-2 border-black flex items-center justify-center">
           ✓
         </span>

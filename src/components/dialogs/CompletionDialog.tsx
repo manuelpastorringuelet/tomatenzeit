@@ -16,7 +16,7 @@ const CompletionDialog = ({ activity, startWork, startLastChance }: CompletionDi
           onClick={startWork}
           className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
         >
-          <span className="mr-2">YES, START WORK</span>
+          <span className="mr-2">YES, START WORK (Y)</span>
           <span className="w-4 h-4 border-2 border-white flex items-center justify-center">
             ✓
           </span>
@@ -25,7 +25,7 @@ const CompletionDialog = ({ activity, startWork, startLastChance }: CompletionDi
           onClick={startLastChance}
           className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded flex items-center justify-center mx-auto"
         >
-          <span className="mr-2">I&apos;LL DO IT RIGHT NOW</span>
+          <span className="mr-2">I&apos;LL DO IT RIGHT NOW (N)</span>
           <span className="w-4 h-4 border-2 border-black flex items-center justify-center">
             ⏱️
           </span>
