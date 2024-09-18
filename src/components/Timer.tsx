@@ -8,6 +8,7 @@ import {
   wellnessActivities,
   WORK_TIME,
 } from "@/constants/timerConstants";
+import { useWakeLock } from "@/hooks/useWakeLock";
 import { formatTime, getRandomActivity } from "@/utils/timerUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import TimerControls from "./TimerControls";
@@ -20,7 +21,9 @@ type TimerProps = {
 const Timer = ({ imageUrl }: TimerProps) => {
   const [timeLeft, setTimeLeft] = useState(WORK_TIME);
   const [isActive, setIsActive] = useState(false);
-  const [mode, setMode] = useState<"work" | "short_break" | "long_break">("work");
+  const [mode, setMode] = useState<"work" | "short_break" | "long_break">(
+    "work"
+  );
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const [activity, setActivity] = useState("");
   const [showDialog, setShowDialog] = useState(false);
@@ -28,18 +31,23 @@ const Timer = ({ imageUrl }: TimerProps) => {
   const [lastChanceActive, setLastChanceActive] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { requestWakeLock, releaseWakeLock } = useWakeLock();
 
   useEffect(() => {
     // Load saved state from localStorage
     const savedTimeLeft = localStorage.getItem("timeLeft");
     const savedIsActive = localStorage.getItem("isActive");
-    const savedMode = localStorage.getItem("mode") as "work" | "short_break" | "long_break";
+    const savedMode = localStorage.getItem("mode") as
+      | "work"
+      | "short_break"
+      | "long_break";
     const savedCompletedPomodoros = localStorage.getItem("completedPomodoros");
 
     if (savedTimeLeft) setTimeLeft(parseInt(savedTimeLeft, 10));
     if (savedIsActive) setIsActive(savedIsActive === "true");
     if (savedMode) setMode(savedMode);
-    if (savedCompletedPomodoros) setCompletedPomodoros(parseInt(savedCompletedPomodoros, 10));
+    if (savedCompletedPomodoros)
+      setCompletedPomodoros(parseInt(savedCompletedPomodoros, 10));
   }, []);
 
   useEffect(() => {
@@ -210,7 +218,8 @@ const Timer = ({ imageUrl }: TimerProps) => {
       });
     }
     setIsActive(true);
-  }, [timeLeft, mode]);
+    requestWakeLock();
+  }, [timeLeft, mode, requestWakeLock]);
 
   const stopTimer = useCallback(() => {
     if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
@@ -219,7 +228,8 @@ const Timer = ({ imageUrl }: TimerProps) => {
       });
     }
     setIsActive(false);
-  }, []);
+    releaseWakeLock();
+  }, [releaseWakeLock]);
 
   const toggleTimer = () => {
     if (isActive) {
